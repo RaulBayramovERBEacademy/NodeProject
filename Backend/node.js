@@ -20,7 +20,11 @@ const server = http.createServer(async (request, response) => {
   );
   console.log(parsedUrl.pathname);
   const pathname = parsedUrl.pathname.toLocaleLowerCase();
-
+  if (pathname === "/favicon.ico") {
+    response.statusCode = 204; // No Content
+    response.end();
+    return;
+  }
   if (pathname.endsWith(".js")) {
     response.setHeader("Content-Type", "application/javascript");
     response.end(await readFile_(pathname.slice(1)));
@@ -51,11 +55,24 @@ const server = http.createServer(async (request, response) => {
       // response.end(await readFile_("about.html")); // Sabit dosya adı
       pageTitle = "You are in the About page!";
       break;
+    case "/HTML/header":
+      console.log("header request");
+      break;
+
     default:
-      // response.end("<h1>Page not found</h1>");
+      console.log("404 Not Found:", pathname);
+      response.statusCode = 404;
+
+      const errorMessage = "<h1>404 - Page not found</h1>";
+      const headerHTML = await readFile_("/HTML/header.html");
+      singlePageAplication = singlePageAplication
+        .replace("{{%header%}}", headerHTML)
+        .replace("{{%CONTENT%}}", errorMessage);
+
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
+      response.end(singlePageAplication);
       return;
   }
-
   singlePageAplication = singlePageAplication
     .replace("{{%CONTENT%}}", pageTitle)
     .replace("{{%header%}}", await readFile_("HTML/header.html"));
@@ -65,5 +82,4 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(3000, "127.0.0.1", () => {
   console.log("Server listening on http://127.0.0.1:3000");
-  console.log(typeof global !== "undefined");
 });
